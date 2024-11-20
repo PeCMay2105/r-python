@@ -52,7 +52,6 @@ pub enum Statement {
     While(Box<Expression>, Box<Statement>),
     Block(Vec<Statement>), // For indented blocks
     Sequence(Box<Statement>, Box<Statement>),
-    Casting(Box<Name>, Box<Expression>),
 }
 
 #[derive(Debug)]
