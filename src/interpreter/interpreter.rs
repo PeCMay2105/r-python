@@ -302,6 +302,13 @@ pub fn execute(stmt: Statement, env: Environment) -> Result<Environment, ErrorMe
                 _ => Err(String::from("expecting a boolean value.")),
             }
         }
+        Statement::Block(statements) => {
+            let mut current_env = env;
+            for stmt in statements {
+                current_env = execute(stmt, current_env)?;
+            }
+            Ok(current_env)
+        }
         Statement::While(cond, stmt) => {
             let mut value = eval(*cond.clone(), &env)?;
             let mut new_env = env;
@@ -323,6 +330,8 @@ mod tests {
     use super::*;
     use crate::ir::ast::Expression::*;
     use crate::ir::ast::Statement::*;
+    use crate::parser::parser::parse_sequence_statement;
+
     use approx::relative_eq;
 
     #[test]
@@ -886,97 +895,6 @@ mod tests {
         }
     }
 
-    // #[test]
-    // fn eval_while_loop_decrement() {
-    //     /*
-    //      * Test for while loop that decrements a variable
-    //      *
-    //      * > x = 3
-    //      * > y = 10
-    //      * > while x:
-    //      * >   y = y - 1
-    //      * >   x = x - 1
-    //      *
-    //      * After executing, 'y' should be 7 and 'x' should be 0.
-    //      */
-    //     let env = HashMap::new();
-
-    //     let a1 = Statement::Assignment(Box::new(String::from("x")), Box::new(CInt(3)));
-    //     let a2 = Statement::Assignment(Box::new(String::from("y")), Box::new(CInt(10)));
-    //     let a3 = Statement::Assignment(
-    //         Box::new(String::from("y")),
-    //         Box::new(Sub(Box::new(Var(String::from("y"))), Box::new(CInt(1)))),
-    //     );
-    //     let a4 = Statement::Assignment(
-    //         Box::new(String::from("x")),
-    //         Box::new(Sub(
-    //             Box::new(Var(String::from("x"))),
-    //             Box::new(CInt(1)),
-    //         )),
-    //     );
-
-    //     let seq1 = Statement::Sequence(Box::new(a3), Box::new(a4));
-    //     let while_statement =
-    //         Statement::While(Box::new(Var(String::from("x"))), Box::new(seq1));
-    //     let program = Statement::Sequence(
-    //         Box::new(a1),
-    //         Box::new(Sequence(Box::new(a2), Box::new(while_statement))),
-    //     );
-
-    //     match execute(program, env) {
-    //         Ok(new_env) => {
-    //             assert_eq!(new_env.get("y"), Some(&CInt(7)));
-    //             assert_eq!(new_env.get("x"), Some(&CInt(0)));
-    //         }
-    //         Err(s) => assert!(false, "{}", s),
-    //     }
-    // }
-    // #[test]
-    // fn eval_nested_if_statements() {
-    //     /*
-    //      * Test for nested if-then-else statements
-    //      *
-    //      * > x = 10
-    //      * > if x > 5:
-    //      * >   if x > 8:
-    //      * >     y = 1
-    //      * >   else:
-    //      * >     y = 2
-    //      * > else:
-    //      * >   y = 0
-    //      *
-    //      * After executing, 'y' should be 1.
-    //      */
-    //     let env = HashMap::new();
-
-    //     let inner_then_stmt =
-    //         Assignment(String::from("y")), Box:new(CInt(1)));
-    //     let inner_else_stmt =
-    //         Assignment(String::from("y")), Box:new(CInt(2)));
-    //     let inner_if_statement = Statement::IfThenElse(
-    //         Box::new(Var(String::from("x"))),
-    //         Box::new(inner_then_stmt),
-    //         Box::new(inner_else_stmt),
-    //     );
-
-    //     let outer_else_stmt =
-    //         Assignment(String::from("y")), Box:new(CInt(0)));
-    //     let outer_if_statement = Statement::IfThenElse(
-    //         Box::new(Var(String::from("x"))),
-    //         Box::new(inner_if_statement),
-    //         Box::new(outer_else_stmt),
-    //     );
-
-    //     let setup_stmt =
-    //         Assignment(String::from("x")), Box:new(CInt(10)));
-    //     let program = Sequence(Box::new(setup_stmt), Box::new(outer_if_statement));
-
-    //     match execute(&program, env) {
-    //         Ok(new_env) => assert_eq!(new_env.get("y"), Some(&1)),
-    //         Err(s) => assert!(false, "{}", s),
-    //     }
-    // }
-
     #[test]
     fn eval_complex_sequence() {
         /*
@@ -1007,6 +925,25 @@ mod tests {
                 assert_eq!(new_env.get("x"), Some(&CInt(5)));
                 assert_eq!(new_env.get("y"), Some(&CInt(0)));
                 assert_eq!(new_env.get("z"), Some(&CInt(13)));
+            }
+            Err(s) => assert!(false, "{}", s),
+        }
+    }
+
+    #[test]
+    fn eval_another_if_test() {
+        let input = "x = 10\nif x > 0:\n    y = 1\nelse:\n    y = 2";
+        let res = parse_sequence_statement(input);
+        match res {
+            Ok((_, program)) => {
+                let env = HashMap::new();
+                match execute(program, env) {
+                    Ok(new_env) => {
+                        assert_eq!(new_env.get("x"), Some(&CInt(10)));
+                        assert_eq!(new_env.get("y"), Some(&CInt(1)));
+                    }
+                    Err(s) => assert!(false, "{}", s),
+                }
             }
             Err(s) => assert!(false, "{}", s),
         }
