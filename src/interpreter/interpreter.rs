@@ -318,6 +318,8 @@ mod tests {
     use super::*;
     use crate::ir::ast::Expression::*;
     use crate::ir::ast::Statement::*;
+    use crate::parser::parser::parse_sequence_statement;
+
     use approx::relative_eq;
 
     #[test]
@@ -631,6 +633,7 @@ mod tests {
         }
     }
 
+    //    fn eval_
     // #[test]
     // fn eval_while_loop_decrement() {
     //     /*
@@ -756,6 +759,25 @@ mod tests {
                 assert_eq!(new_env.get("x"), Some(&CInt(5)));
                 assert_eq!(new_env.get("y"), Some(&CInt(0)));
                 assert_eq!(new_env.get("z"), Some(&CInt(13)));
+            }
+            Err(s) => assert!(false, "{}", s),
+        }
+    }
+
+    #[test]
+    fn eval_another_if_test() {
+        let input = "x = 10\nif x > 0:\n    y = 1\nelse:\n    y = 2";
+        let res = parse_sequence_statement(input);
+        match res {
+            Ok((_, program)) => {
+                let env = HashMap::new();
+                match execute(program, env) {
+                    Ok(new_env) => {
+                        assert_eq!(new_env.get("x"), Some(&CInt(10)));
+                        assert_eq!(new_env.get("y"), Some(&CInt(1)));
+                    }
+                    Err(s) => assert!(false, "{}", s),
+                }
             }
             Err(s) => assert!(false, "{}", s),
         }

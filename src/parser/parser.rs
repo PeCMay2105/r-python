@@ -35,7 +35,7 @@ fn term(input: &str) -> IResult<&str, Expression> {
 }
 
 //expression parser to include if statements
-fn statement(input: &str) -> IResult<&str, Statement> {
+pub fn statement(input: &str) -> IResult<&str, Statement> {
     let (input, _) = space0(input)?;
     alt((if_statement, assignment, declaration))(input)
 }
@@ -189,6 +189,13 @@ pub fn parse(input: &str) -> IResult<&str, Vec<Statement>> {
     let (input, _) = many0(line_ending)(input)?; // Consume trailing newlines
     let (input, _) = space0(input)?; // Consume trailing whitespace
     Ok((input, statements))
+}
+
+pub fn parse_sequence_statement(input: &str) -> IResult<&str, Statement> {
+    let (rest1, s1) = statement(input)?;
+    let (rest2, _) = many1(line_ending)(rest1)?;
+    let (rest3, s2) = statement(rest2)?;
+    Ok((rest3, Statement::Sequence(Box::new(s1), Box::new(s2))))
 }
 
 #[cfg(test)]
